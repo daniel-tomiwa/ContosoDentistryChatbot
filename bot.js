@@ -25,48 +25,28 @@ class DentaBot extends ActivityHandler {
             const QnAResults = await this.QnAMaker.getAnswers(context);
             // send user input to IntentRecognizer and collect the response in a variable
             const LuisResults = await this.IntentRecognizer.executeLuisQuery(context)
-
+            // get the top intent from the luis result
+            const topIntent = LuisResults.luisResult.prediction.topIntent
+            
+            let messageOutput;
             // determine which service to respond with based on the results from LUIS //
-            if (LuisResults.luisResult.prediction.topIntent === "getAvailability" &&
-                LuisResults.intents.getAvailability.score > .8
-            ) {
-                const timeEntity = await this.IntentRecognizer.getTimeEntity(LuisResults);
-                // call api with time entity info
-                const getAvailabilityResult = await this.DentistScheduler.getAvailability();
-                console.log(getAvailabilityResult)
-                await context.sendActivity(getAvailabilityResult);
-                await next();
-                return;
-            } else if (LuisResults.luisResult.prediction.topIntent === "scheduleAppointment" &&
-                       LuisResults.intents.scheduleAppointment.score > .8
-            ) {
-                const timeEntity = await this.IntentRecognizer.getTimeEntity(LuisResults);
-                // call api with time entity info
-                const scheduleAppointmentResult = await this.DentistScheduler.scheduleAppointment(timeEntity);
-                console.log(scheduleAppointmentResult)
-                await context.sendActivity(scheduleAppointmentResult);
-                await next();
-                return;
-            }
-
-            // If an answer was received from QnA Maker, send the answer back to the user.
-            if (QnAResults[0]) {
-                await context.sendActivity(`${QnAResults[0].answer}`);
-            }
-            else {
-                // If no answers were returned from QnA Maker, reply with help.
-                await context.sendActivity(`I'm not sure I can answer your question`
-                    + 'I can help you schedule appointments'
-                    + `Or you can ask me questions about the dentistry`);
-            }
+            if (LuisResults.intents[topIntent].score > .8) {
+                const time = await this.IntentRecognizer.getTimeEntity(LuisResults);
+                const date = await this.IntentRecognizer.getDateEntity(LuisResults);
+                if (topIntent === 'getAvailability') {
+                    messageOutput = await this.DentistScheduler.getAvailability(time);
+                } else {
+                    messageOutput = await this.DentistScheduler.scheduleAppointment(time, date);
+                };
+            } else if (QnAResults[0]) {
+                messageOutput = QnAResults[0].answer;
+            } else {
+                messageOutput = `I'm not sure I can answer your question`
+                + 'I can help you schedule appointments'
+                + `Or you can ask me questions about the dentistry`
+            };
+            await context.sendActivity(messageOutput);
             await next();
-            // if(top intent is intentA and confidence greater than 50){
-            //  doSomething();
-            //  await context.sendActivity();
-            //  await next();
-            //  return;
-            // }
-            // else {...}
         });
              
         this.onMembersAdded(async (context, next) => {
