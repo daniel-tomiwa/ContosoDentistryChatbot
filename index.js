@@ -12,36 +12,25 @@ const restify = require('restify');
 
 // Import required bot services.
 // See https://aka.ms/bot-services to learn more about the different parts of a bot.
-const { BotFrameworkAdapter, CloudAdapter, createBotFrameworkAuthenticationFromConfiguration, ConfigurationServiceClientCredentialFactory } = require('botbuilder');
+const { BotFrameworkAdapter } = require('botbuilder');
 
 // This bot's main dialog.
 const { DentaBot } = require('./bot');
-const { createHash } = require('crypto');
 
 // Create HTTP server
 const server = restify.createServer();
-server.use(restify.plugins.bodyParser());
 server.listen(process.env.port || process.env.PORT || 3978, () => {
     console.log(`\n${server.name} listening to ${server.url}`);
     console.log('\nGet Bot Framework Emulator: https://aka.ms/botframework-emulator');
     console.log('\nTo talk to your bot, open the emulator select "Open Bot"');
 });
 
-const credentialsFactory = new ConfigurationServiceClientCredentialFactory({
-    MicrosoftAppId: process.env.MicrosoftAppId,
-    MicrosoftAppPassword: process.env.MicrosoftAppPassword,
-});
-
-const botFrameworkAuthentication = createBotFrameworkAuthenticationFromConfiguration(null, credentialsFactory);
-
 // Create adapter.
 // See https://aka.ms/about-bot-adapter to learn more about how bots work.
-// const adapter = new BotFrameworkAdapter({
-//     appId: process.env.MicrosoftAppId,
-//     appPassword: process.env.MicrosoftAppPassword
-// });
-
-const adapter = new CloudAdapter(botFrameworkAuthentication);
+const adapter = new BotFrameworkAdapter({
+    appId: process.env.MicrosoftAppId,
+    appPassword: process.env.MicrosoftAppPassword
+});
 
 // Catch-all for errors.
 const onTurnErrorHandler = async (context, error) => {
