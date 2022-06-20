@@ -21,6 +21,8 @@ class DentaBot extends ActivityHandler {
         this.IntentRecognizer = new IntentRecognizer(configuration.LuisConfiguration);
 
         this.onMessage(async (context, next) => {
+
+            try{
             // send user input to QnA Maker and collect the response in a variable
             const QnAResults = await this.QnAMaker.getAnswers(context);
             // send user input to IntentRecognizer and collect the response in a variable
@@ -46,6 +48,9 @@ class DentaBot extends ActivityHandler {
                 + `Or you can ask me questions about the dentistry`
             };
             await context.sendActivity(messageOutput);
+        } catch(e) {
+            console.error(e)
+        }
             await next();
         });
              
